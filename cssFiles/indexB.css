@@ -1,0 +1,11 @@
+.modal{
+    display: none;
+}
+
+.modal-content{
+    width: 80%;
+}
+
+.close{
+    color: #aaaaaa;
+}

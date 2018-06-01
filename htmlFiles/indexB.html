@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+    <head>
+        <title>client</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="calcul.css">
+        <!--<script src=""></script>-->
+    </head>
+    <body>
+        <script>
+            $(function(){
+                var socket = io();
+
+                socket.on('showNet', function(){
+                    window.location.href = '/graph'
+                });
+
+                $('#system').submit(function(){
+                    console.log('henlo');
+                    socket.emit('calculate', $('#mainD').val(), $('#lateralD').val(), $('#width').val(), $('#height').val(), $('#eFlow').val(), $('#walls').val(),$("#wallType").val(), $("#notsubMain").val());
+                    return false;
+                });
+
+            });
+
+        </script>
+        <div class="container" id="form-controller">
+            <form action="" id='system'>
+                <div class="form-group">
+                    <label for="mainD">Sub-Main Diameter (mm):</label><br>
+                    <input type='text' id='mainD' value='63' name='Main Diameter (inch)'><br>
+                </div>
+                <div class='form-group'>
+                    <label for='subMain'>Main Diameter (mm)</label><br>
+                    <input type='text' id='notsubMain' value='63' name='Real main diameter'><br>
+                </div>
+                <div class="form-group">
+                    <label for="lateralD">Lateral Diameter (mm):</label><br>
+                    <input type='text' id='lateralD' value='16' name=':Lateral Diameter (inch)'><br>
+                </div>
+                <div class="form-group">
+                    <label for="wallType">Wall type (A; adjacent, B: different)</label><br>
+                    <input type="text" id="wallType" value="A">
+                </div>
+                <div class="form-group">
+                    <label for="width">Width (feet):</label><br>
+                    <input type='text' id='width' value='' name='Width (feet)'><br>
+                </div>
+                <div class="form-group">
+                    <label for="height">Height (feet):</label><br>
+                    <input type='text' id='height' value='' name='Height (feet)'><br>
+                </div>
+                <div class="form-group">
+                    <label for="eFlow">Emitter Flow (lph):</label><br>
+                    <input type='text' id='eFlow' value='' name='Emitter Flow (lph)'><br>
+                </div>
+                <div class="form-group">
+                    <label for="walls">Wall Number</label><br>
+                    <input type='text' id='walls' value='1' name='walls'>
+                </div>
+
+
+                    <input type='submit' value='submit'>
+            </form>
+        </div>
+    </body>
+</html>

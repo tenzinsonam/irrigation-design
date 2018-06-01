@@ -1,0 +1,563 @@
+<html>
+<head>
+	<title>Irrigation network</title>
+
+	<script type="text/javascript">
+		mxBasePath = '../src';
+	</script>
+
+	<script type="text/javascript" src="javascript/src/js/mxClient.js"></script>
+
+	<script type="text/javascript">
+		var rowsCSV=[];
+		var csvContent="data:text/csv;charset=utf-8,"
+
+		function createCSV(){
+			var enc = encodeURI(csvContent);
+			window.open(enc);
+		}
+
+
+		function main(container, pressureChange, wi, hi, mainV, mainVloss, walls, lateralD, mainD, notsubMain, wallType, eFlow )
+		{
+			if (!mxClient.isBrowserSupported())
+			{
+				mxUtils.error('Browser is not supported!', 200, false);
+			}
+			else
+			{
+				mxEvent.disableContextMenu(container);
+
+				var graph = new mxGraph(container);
+
+				new mxRubberband(graph);
+
+				var parent = graph.getDefaultParent();
+
+				graph.getModel().beginUpdate();
+				try
+				{
+					var g=10, rho=1000;
+					var v1 = graph.insertVertex(parent, null, '', 20, 20, 20, 20, 'fillColor=blue');
+					//var v2 = graph.insertVertex(parent, null, 'World!', 20, 150, 80, 30);
+					//var v3 = graph.insertVertex(parent, null, '', 200, 150, 80, 30);
+					//var v4 = graph.insertVertex(v2, null, '', 150, 20, 80, 30);
+					//var e1 = graph.insertEdge(parent, null, '', v1, v2);
+					//var e2 = graph.insertEdge(parent, null, '', v2, v3);
+					//var e3 = graph.insertEdge(parent, null, '', v1, v3);
+
+					var width= wi*2;
+					var height= hi*2;
+					//width= width*2;
+					//height= height*2;
+
+					var prevSub= v1;
+					var tempSub;
+					var prevEmit;
+					var tempEmit;
+					var xEmit;
+					var xSub= 20;
+					var yEmit;
+					var ySub= 20+54;
+          			var yloss =0;
+          			var tempPY=0;
+          			var kineticH=0;
+					//console.log(width+","+height);
+
+                    var n28 = Math.floor(wi/28);
+					console.log('n28 is: '+n28);
+					//n28 = 3;
+                    var tempMain=v1;
+                    var prevMain=v1;
+                    var xMain = 20+100;
+                    var yMain = 20;
+					var lastArr=[];
+					var tempLastMain;
+					var initialMainV=mainV;
+					//adjacent walls
+					var screenFilter = 1;
+					var venturiAssembly = 1;
+					var byPassAssembly = 1;
+					var pvcPipe1 = 0;
+					var pvcPipe2=0;
+					var pvcT=0;
+					var pvcElbow=1; //used at the end
+					var pvcReducer=0;
+					var lateralPipe=0;
+					var startConnector=0;
+					var grommet=0;
+					var inlineValve=0;
+					var emitter=0;
+					var flushValve=0;
+					var airRelease=1;
+					var pressureRelesase=1;
+					var pvcControlValve=0;
+					var pvcFTA = 2;
+					var pvcMTA = 2;
+					var emitterPer28=Math.floor(28*12/5.5); //taking into account 5.5inch x 6 inch pockets
+
+
+                    for(var k=0; k<n28; k++){
+						pvcPipe1+=28;
+						pvcT+=2;
+						pvcReducer+=2;
+						flushValve+=2;
+						pvcControlValve+=2;
+                        tempMain = graph.insertVertex(parent, null, '', xMain, yMain, 20, 20, 'fillColor=green');
+                        xSub = xMain;
+                        ySub = yMain + 30;
+                        graph.insertEdge(parent, null, '',prevMain, tempMain);
+                        prevSub = tempMain;
+                        prevMain = tempMain;
+                        xMain+=3200;
+						kineticH=0;
+						yloss=0;
+						tempPY=0;
+						mainV=initialMainV;
+                        for(var i=0; i<height; i++){
+							pvcPipe2+=0.5;
+							lateralPipe+=28;
+							startConnector+=1;
+							grommet+=1;
+							inlineValve+=1;
+    			            kineticH= Math.pow(mainV,2)/(2*g);
+    			            yloss=yloss+kineticH-6*0.0254;  //6 inch pocket height (rho*g*h)
+    			            tempPY=yloss*rho*g*0.000145;
+    								//console.log(i+':'+tempPY+','+mainV);
+    			            mainV-=mainVloss;
+    						tempSub= graph.insertVertex(parent, null, tempPY, xSub, ySub,160,  20, 'fillColor=white')
+    						xEmit= xSub+200;
+    						yEmit= ySub;
+    						graph.insertEdge(parent, null, '', prevSub, tempSub);
+    						prevEmit= tempSub;
+    						prevSub= tempSub;
+    						ySub+= 54;
+    						for(var j=0; j<emitterPer28; j++){
+								emitter+=1;
+								if(j==emitterPer28-1){
+    								tempEmit= graph.insertVertex(parent, null, pressureChange, xEmit, yEmit, 200, 20, 'fillColor=white');
+    								graph.insertEdge(parent, null, '', prevEmit, tempEmit);
+									lastArr.push(tempEmit);
+    							}
+    							else {
+    								tempEmit= graph.insertVertex(parent, null, '' + j, xEmit, yEmit, 20, 20, 'fillColor=lightblue');
+    								graph.insertEdge(parent, null, '', prevEmit, tempEmit);
+    							}
+    							prevEmit= tempEmit;
+    							xEmit+= 40;
+    							//console.log(i+j);
+    						}
+
+    						//xSub+= 24;
+    					}
+						tempLastMain = graph.insertVertex(parent, null, '', xMain-200, yMain, 20, 20, 'fillColor=green');
+						xSub = xMain-300;
+						ySub = yMain + 30;
+						//xMain+=3000;
+						kineticH=0;
+						yloss=0;
+						tempPY=0;
+						mainV=initialMainV;
+						graph.insertEdge(parent, null, '',prevMain, tempLastMain);
+						for(var i=0;i<lastArr.length; i++){
+							pvcPipe2+=0.5;
+							startConnector+=1;
+							grommet+=1;
+							inlineValve+=1;
+							kineticH= Math.pow(mainV,2)/(2*g);
+    			            yloss=yloss+kineticH-6*0.0254;  //6 inch pocket (rho*g*h)
+    			            tempPY=yloss*rho*g*0.000145;
+    								//console.log(i+':'+tempPY+','+mainV);
+    			            mainV-=mainVloss;
+							tempSub= graph.insertVertex(parent, null, tempPY, xSub, ySub,160,  20, 'fillColor=white');
+							graph.insertEdge(parent, null, '', tempSub, lastArr[i]);
+							ySub+= 54;
+							if(i==0){
+								graph.insertEdge(parent, null, '', tempLastMain, tempSub);
+							}
+						}
+						//graph.insertEdge(parent, null,'',tempLastMain,lastArr[0]);
+						lastArr=[];
+
+                    }
+
+					width=Math.floor((wi%28)*12/5.5); //taking into account 5.5inch x 6 inch pockets
+
+					if(width>0){
+						for(var k=0; k<1; k++){
+							pvcPipe1+=(wi%28);
+							pvcT+=2;
+							pvcReducer+=2;
+							flushValve+=2;
+							pvcControlValve+=2;
+	                        tempMain = graph.insertVertex(parent, null, '', xMain, yMain, 20, 20, 'fillColor=green');
+	                        xSub = xMain;
+	                        ySub = yMain + 30;
+	                        graph.insertEdge(parent, null, '',prevMain, tempMain);
+	                        prevSub = tempMain;
+	                        prevMain = tempMain;
+	                        xMain+=3200;
+							kineticH=0;
+							yloss=0;
+							tempPY=0;
+							mainV=initialMainV;
+	                        for(var i=0; i<height; i++){
+								pvcPipe2+=0.5;
+								lateralPipe+=(wi%28);
+								startConnector+=1;
+								grommet+=1;
+								inlineValve+=1;
+	    			            kineticH= Math.pow(mainV,2)/(2*g);
+	    			            yloss=yloss+kineticH-6*0.0254;  //6 inch pocket height (rho*g*h)
+	    			            tempPY=yloss*rho*g*0.000145;
+	    									//console.log(i+':'+tempPY+','+mainV);
+	    			            mainV-=mainVloss;
+	    						tempSub= graph.insertVertex(parent, null, tempPY, xSub, ySub,160,  20, 'fillColor=white')
+	    						xEmit= xSub+200;
+	    						yEmit= ySub;
+	    						graph.insertEdge(parent, null, '', prevSub, tempSub);
+	    						prevEmit= tempSub;
+	    						prevSub= tempSub;
+	    						ySub+= 54;
+	    						for(var j=0; j<width; j++){
+									emitter+=1;
+	    							if(j==width-1){
+	    								tempEmit= graph.insertVertex(parent, null, pressureChange, xEmit, yEmit, 200, 20, 'fillColor=white');
+	    								graph.insertEdge(parent, null, '', prevEmit, tempEmit);
+										lastArr.push(tempEmit);
+	    							}
+	    							else {
+	    								tempEmit= graph.insertVertex(parent, null, '' + j, xEmit, yEmit, 20, 20, 'fillColor=lightblue');
+	    								graph.insertEdge(parent, null, '', prevEmit, tempEmit);
+	    							}
+	    							prevEmit= tempEmit;
+	    							xEmit+= 40;
+	    							//console.log(i+j);
+	    						}
+								//console.log('heck :'+grommet);
+
+	    						//xSub+= 24;
+	    					}
+							tempLastMain = graph.insertVertex(parent, null, '', xMain-200, yMain, 20, 20, 'fillColor=green');
+							xSub = xMain-300;
+							ySub = yMain + 30;
+							kineticH=0;
+							yloss=0;
+							tempPY=0;
+							mainV=initialMainV;
+							graph.insertEdge(parent, null, '',prevMain, tempLastMain);
+							for(var i=0;i<lastArr.length; i++){
+								pvcPipe2+=0.5;
+								startConnector+=1;
+								grommet+=1;
+								inlineValve+=1;
+								kineticH= Math.pow(mainV,2)/(2*g);
+	    			            yloss=yloss+kineticH-6*0.0254;  //6 inch pocket (rho*g*h)
+	    			            tempPY=yloss*rho*g*0.000145;
+	    								//console.log(i+':'+tempPY+','+mainV);
+	    			            mainV-=mainVloss;
+								tempSub= graph.insertVertex(parent, null, tempPY, xSub, ySub,160,  20, 'fillColor=white');
+								graph.insertEdge(parent, null, '', tempSub, lastArr[i]);
+								ySub+= 54;
+								if(i==0){
+									graph.insertEdge(parent, null, '', tempLastMain, tempSub);
+								}
+							}
+							//graph.insertEdge(parent, null,'',tempLastMain,lastArr[0]);
+							lastArr=[];
+
+	                    }
+					}
+					if(wallType!='B'){
+						pvcElbow+=(walls-1);
+						pvcPipe1*=walls;
+						pvcPipe2*=walls;
+						pvcT*=walls;
+						pvcReducer*=walls;
+						lateralPipe*=walls;
+						startConnector*=walls;
+						grommet*=walls;
+						inlineValve*=walls;
+						emitter*=walls;
+						flushValve*=walls;
+						pvcControlValve*=walls;
+					}
+					else{
+						pvcElbow+=(walls-1);
+						pvcPipe1*=walls;
+						pvcPipe2*=walls;
+						pvcT*=walls;
+						pvcReducer*=walls;
+						lateralPipe*=walls;
+						startConnector*=walls;
+						grommet*=walls;
+						inlineValve*=walls;
+						emitter*=walls;
+						flushValve*=walls;
+						pvcControlValve*=walls;
+						screenFilter*=walls;
+						venturiAssembly*=walls;
+						byPassAssembly*=walls;
+						airRelease*=walls;
+						pressureRelesase*=walls;
+						pvcFTA*=walls;
+						pvcMTA*=walls;
+					}
+					if(notsubMain==mainD){
+						pvcPipe1+=pvcPipe2;
+						pvcPipe2=0;
+						pvcReducer=0;
+					}
+					console.log("screenFilter :"+screenFilter);
+					console.log("venturiAssembly :"+venturiAssembly);
+					console.log("byPassAssembly :"+byPassAssembly);
+					console.log("pvcPipe1 "+notsubMain+"mm : "+pvcPipe1);
+					console.log("pvcPipe2 "+mainD+"mm : "+pvcPipe2);
+					console.log("pvcT "+notsubMain+"mm : "+pvcT);
+					console.log("pvcElbow "+notsubMain+"mm :"+pvcElbow); //used at the end
+					console.log("pvcReducer "+notsubMain+"x"+mainD+"mm : "+pvcReducer);
+					console.log("lateralPipe "+lateralD+"mm : "+lateralPipe);
+					console.log("startConnector "+lateralD+"mm : "+startConnector);
+					console.log("grommet "+lateralD+"mm : "+grommet);
+					console.log("inlineValve "+lateralD+"mm : "+inlineValve);
+					console.log("emitter: "+emitter);
+					console.log("flushValve "+mainD+"mm : "+flushValve);
+					console.log("airRelease: "+airRelease);
+					console.log("pressureRelesase: "+pressureRelesase);
+					console.log("pvcControlValve "+mainD+"mm : "+pvcControlValve);
+
+					document.getElementById("p1").innerHTML="screenFilter :"+screenFilter;
+					document.getElementById("p2").innerHTML="venturiAssembly :"+venturiAssembly;
+					document.getElementById("p3").innerHTML="byPassAssembly :"+byPassAssembly;
+					document.getElementById("p4").innerHTML="pvcPipe1 "+notsubMain+"mm : "+pvcPipe1
+					document.getElementById("p5").innerHTML="pvcPipe2 "+mainD+"mm : "+pvcPipe2;
+					document.getElementById("p6").innerHTML="pvcT "+notsubMain+"mm : "+pvcT;
+					document.getElementById("p7").innerHTML="pvcElbow "+notsubMain+"mm :"+pvcElbow;
+					document.getElementById("p8").innerHTML="pvcReducer "+notsubMain+"x"+mainD+"mm : "+pvcReducer;
+					document.getElementById("p9").innerHTML="lateralPipe "+lateralD+"mm : "+lateralPipe;
+					document.getElementById("p10").innerHTML="startConnector "+lateralD+"mm : "+startConnector;
+					document.getElementById("p11").innerHTML="grommet "+lateralD+"mm : "+grommet;
+					document.getElementById("p12").innerHTML="inlineValve "+lateralD+"mm : "+inlineValve;
+					document.getElementById("p13").innerHTML="emitter: "+emitter;
+					document.getElementById("p14").innerHTML="flushValve "+mainD+"mm : "+flushValve;
+					document.getElementById("p15").innerHTML="airRelease: "+airRelease;
+					document.getElementById("p16").innerHTML="pressureRelesase: "+pressureRelesase;
+					document.getElementById("p17").innerHTML="pvcControlValve "+mainD+"mm : "+pvcControlValve;
+
+					var pvcPipeCost={
+						63:"96.75",
+						50:"76.05",
+						40:"67.35"
+					}
+					var pvcTCost={
+						63:"113.85",
+						50:"72.3",
+						40:"not given"
+					}
+					var pvcECost={
+						63:"84.15",
+						50:"63.4",
+						40:"not given",
+						12:"3.5"
+					}
+					var pvcReducerCost={
+						"63x50":"49.5",
+						"50x40":"35.65",
+						"63x40":"95.9"
+					}
+					var lateralPipeCost={
+						12:"9.5",
+						16:"11"
+					}
+					var inlineValveCost={
+						12:"28",
+						16:"10"
+					}
+					var flushValveCost={
+						63:"145",
+						40:"120",
+						50:"not given"
+					}
+					var startConnectorCost={
+						12:"1.8",
+						16:"2.1"
+					}
+					var grommetCost={
+						12:"3",
+						16:"3"
+					}
+					var emitterCost={
+						2:"4.75",
+						4:"4.75",
+						8:"4.75"
+					}
+					var airReleaseCost={
+						50:"1800",
+						25:"330",
+						40:"not given",
+						63:"not given"
+					}
+					var pressureRelesaseCost={
+						50:"4000",
+						40:"not given",
+						63:"not given"
+					}
+					var pvcControlValveCost={
+						40:"352",
+						50:"not given",
+						63:"not given"
+					}
+					var pvcFTACost={
+						40:"not given",
+						50:"not given",
+						63:"56"
+					}
+					var pvcMTACost={
+						40:"not given",
+						50:"not given",
+						63:"56"
+					}
+					rowsCSV.push(["Component","Number","Rate","Component Cost","Tax","Total Cost"])
+					rowsCSV.push(["Screen Filter Y Type 20 m3 2\" :",screenFilter,"2500","=$C2*$B2","=$D2*0.18","=$D2+$E2"]);
+					rowsCSV.push(["Venturi Assembly 1\" with manifold :",venturiAssembly,"3200"]);
+					rowsCSV.push(["By Pass Assembly 2\"x1.5\" with manifold :",byPassAssembly,"1100"]);
+					rowsCSV.push(["pvcPipe1 "+notsubMain+"mm : ",pvcPipe1,pvcPipeCost[notsubMain]]);
+					rowsCSV.push(["pvcPipe2 "+mainD+"mm : ",pvcPipe2,pvcPipeCost[mainD]]);
+					rowsCSV.push(["pvcT "+notsubMain+"mm : ",pvcT,pvcTCost[notsubMain]]);
+					rowsCSV.push(["pvcElbow "+notsubMain+"mm :",pvcElbow,pvcECost[notsubMain]]);
+					rowsCSV.push(["pvcReducer "+notsubMain+"x"+mainD+"mm : ",pvcReducer,pvcReducerCost[notsubMain+"x"+mainD]]);
+					rowsCSV.push(["lateralPipe "+lateralD+"mm : ",lateralPipe,lateralPipeCost[lateralD]]);
+					rowsCSV.push(["startConnector "+lateralD+"mm : ",startConnector,startConnectorCost[lateralD]]);
+					rowsCSV.push(["grommet "+lateralD+"mm : ",grommet,grommetCost[lateralD]]);
+					rowsCSV.push(["inlineValve "+lateralD+"mm : ",inlineValve,inlineValveCost[lateralD]]);
+					rowsCSV.push(["emitter "+ eFlow+" lph : ",emitter,emitterCost[eFlow]]);
+					rowsCSV.push(["flushValve "+mainD+"mm : ",flushValve,flushValveCost[mainD]]);
+					rowsCSV.push(["Air Release Valve "+notsubMain+"mm : ",airRelease,airReleaseCost[notsubMain]]);
+					rowsCSV.push(["Pressure Release Valve "+notsubMain+"mm : ",pressureRelesase,pressureRelesaseCost[notsubMain]]);
+					rowsCSV.push(["pvcControlValve "+mainD+"mm : ",pvcControlValve,pvcControlValveCost[mainD]]);
+					rowsCSV.push(["pvc FTA "+notsubMain+"mm : ",pvcFTA,pvcFTACost[notsubMain]]);
+					rowsCSV.push(["pvc MTA "+notsubMain+"mm : ",pvcMTA,pvcMTACost[notsubMain]]);
+					/*rowsCSV.push(["punch tool for PVC",1]);
+					rowsCSV.push(["punch tool for Emitter",2]);*/
+					rowsCSV.forEach(function(i){
+						var temp2 = i.join(",");
+						csvContent+=temp2+"\r\n";
+					});
+					/*window.onload = function() {
+						document.getElementById("p1").innerHTML="works";
+					}*/
+					//"screenFilter :"+screenFilter;
+
+
+          /*var xmlEncode = new mxCodec();
+          var node = xmlEncode.encode(graph.getModel());
+          mxUtils.popup(mxUtils.getPrettyXml(node), false);*/
+				}
+				finally
+				{
+					// Updates the display
+					graph.getModel().endUpdate();
+				}
+			}
+			/*
+			var xmlDoc = mxUtils.createXmlDocument();
+			var root = xmlDoc.createElement('output');
+			xmlDoc.appendChild(root);
+
+			var xmlCanvas = new mxXmlCanvas2D(root);
+			var imgExport = new mxImageExport();
+			imgExport.drawState(graph.getView().getState(graph.model.root), xmlCanvas);
+
+			var bounds = graph.getGraphBounds();
+			var w = Math.ceil(bounds.x + bounds.width);
+			var h = Math.ceil(bounds.y + bounds.height);
+
+			var xml = mxUtils.getXml(root);
+			new mxXmlRequest('export', 'format=png&w=' + w +
+		 	'&h=' + h + '&bg=#F9F7ED&xml=' + encodeURIComponent(xml))
+		 	.simulate(document, '_blank');*/
+			return createCSV();
+
+		};
+
+
+	</script>
+
+	<style>
+		.modal{
+			display:none;
+			top: 0;
+			/*z-index: 1;
+			position: fixed;
+			width: 100%;
+			height: 100%;*/
+			background-color: rgb(0, 0, 0);
+			background-color: rgba(0, 0, 0, 0.5);
+		}
+
+		.modal-content{
+			/*margin: 30px auto;
+			width: 60%;
+			padding: 20px;
+			background-color: #fefefe;
+			text-align: center;*/
+		}
+
+		.close{
+			color: #aaaaaa;
+			float: right;
+		}
+	</style>
+</head>
+
+<script>
+	function second(container){
+    //lateralD = inch, lateralL=feet, orificeQ=lph, mainL=feet, mainD=inch
+		var pressureChange='<%= pressureChange %>', wi='<%= width %>', hi='<%= height %>', mainV='<%= mainV %>', mainVloss='<%= mainVloss %>',walls='<%= walls %>', wallType='<%= wallType %>', notsubMain='<%= notsubMain %>', mainD='<%= mainD %>', lateralD='<%= lateralD %>', eFlow='<%= eFlow %>' ;
+        var nameP='<%= nameP %>', nameMPi='<%= nameMPi %>', nameLPi='<%= nameLPi %>';
+        console.log(nameP+','+nameMPi+','+nameLPi);
+        return main(container, pressureChange, wi, hi, mainV, mainVloss, walls, lateralD, mainD, notsubMain, wallType, eFlow);
+
+	}
+</script>
+
+
+<body onload="second(document.getElementById('graphContainer'))">
+	<button id="details">Show Components</button>
+	<div id="Modal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<p id="p1">show Something</p>
+			<p id="p2">show Something</p>
+			<p id="p3">show Something</p>
+			<p id="p4">show Something</p>
+			<p id="p5">show Something</p>
+			<p id="p6">show Something</p>
+			<p id="p7">show Something</p>
+			<p id="p8">show Something</p>
+			<p id="p9">show Something</p>
+			<p id="p10">show Something</p>
+			<p id="p11">show Something</p>
+			<p id="p12">show Something</p>
+			<p id="p13">show Something</p>
+			<p id="p14">show Something</p>
+			<p id="p15">show Something</p>
+			<p id="p16">show Something</p>
+			<p id="p17">show Something</p>
+		</div>
+	</div>
+	<script>
+		document.getElementById("p1").innerHTML="worksNot";
+		modal= document.getElementById("Modal")
+		document.getElementById("details").onclick = function(){
+			modal.style.display="block";
+		}
+		document.getElementsByClassName("close")[0].onclick = function(){
+			modal.style.display="none";
+		}
+	</script>
+	<div id="graphContainer"
+		style="position:relative;overflow:hidden;width:50000px;height:50000px;background:url('editors/images/grid.gif');cursor:default;">
+	</div>
+</body>
+</html>

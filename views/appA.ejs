@@ -1,0 +1,134 @@
+<html>
+<head>
+	<title>Irrigation network</title>
+
+	<script type="text/javascript">
+		mxBasePath = '../src';
+	</script>
+
+	<script type="text/javascript" src="javascript/src/js/mxClient.js"></script>
+
+	<script type="text/javascript">
+
+		function main(container, pressureChange, wi, hi, mainV, mainVloss )
+		{
+			if (!mxClient.isBrowserSupported())
+			{
+				mxUtils.error('Browser is not supported!', 200, false);
+			}
+			else
+			{
+				mxEvent.disableContextMenu(container);
+
+				var graph = new mxGraph(container);
+
+				new mxRubberband(graph);
+
+				var parent = graph.getDefaultParent();
+
+				graph.getModel().beginUpdate();
+				try
+				{
+          			var g=10, rho=1000;
+					var v1 = graph.insertVertex(parent, null, '', 20, 20, 20, 20, 'fillColor=blue');
+
+					var width= Math.floor(wi*12/5.5);
+					var height= hi*2;
+					var prevSub= v1;
+					var tempSub;
+					var prevEmit;
+					var tempEmit;
+					var xEmit;
+					var xSub= 20;
+					var yEmit;
+					var ySub= 20+54;
+          			var yloss =0;
+          			var tempPY=0;
+          			var kineticH=0;
+					var emitter=0;
+					//console.log(width+","+height);
+					for(var i=0; i<height; i++){
+
+			            kineticH= Math.pow(mainV,2)/(2*g);
+			            yloss=yloss+kineticH-6*0.0254;  //6 inch pocket (rho*g*h)
+			            tempPY=yloss*rho*g*0.000145;
+									//console.log(i+':'+tempPY+','+mainV);
+			            mainV-=mainVloss;
+						tempSub= graph.insertVertex(parent, null, tempPY, xSub, ySub,160,  20, 'fillColor=white')
+						xEmit= xSub+200;
+						yEmit= ySub;
+						graph.insertEdge(parent, null, '', prevSub, tempSub);
+						prevEmit= tempSub;
+						prevSub= tempSub;
+						ySub+= 54;
+						for(var j=0; j<width; j++){
+							emitter+=1;
+							if(j==width-1){
+								tempEmit= graph.insertVertex(parent, null, pressureChange, xEmit, yEmit, 200, 20, 'fillColor=white');
+								graph.insertEdge(parent, null, '', prevEmit, tempEmit);
+							}
+							else {
+								tempEmit= graph.insertVertex(parent, null, '' + j, xEmit, yEmit, 20, 20, 'fillColor=lightblue');
+								graph.insertEdge(parent, null, '', prevEmit, tempEmit);
+							}
+							prevEmit= tempEmit;
+							xEmit+= 104;
+							//console.log(i+j);
+						}
+						//xSub+= 24;
+					}
+					console.log(emitter);
+
+          /*var xmlEncode = new mxCodec();
+          var node = xmlEncode.encode(graph.getModel());
+          mxUtils.popup(mxUtils.getPrettyXml(node), false);*/
+				}
+				finally
+				{
+					// Updates the display
+					graph.getModel().endUpdate();
+				}
+			}
+			/*
+			var xmlDoc = mxUtils.createXmlDocument();
+			var root = xmlDoc.createElement('output');
+			xmlDoc.appendChild(root);
+
+			var xmlCanvas = new mxXmlCanvas2D(root);
+			var imgExport = new mxImageExport();
+			imgExport.drawState(graph.getView().getState(graph.model.root), xmlCanvas);
+
+			var bounds = graph.getGraphBounds();
+			var w = Math.ceil(bounds.x + bounds.width);
+			var h = Math.ceil(bounds.y + bounds.height);
+
+			var xml = mxUtils.getXml(root);
+			new mxXmlRequest('export', 'format=png&w=' + w +
+		 	'&h=' + h + '&bg=#F9F7ED&xml=' + encodeURIComponent(xml))
+		 	.simulate(document, '_blank');*/
+
+		};
+
+
+	</script>
+</head>
+
+<script>
+	function second(container){
+    //lateralD = inch, lateralL=feet, orificeQ=lph, mainL=feet, mainD=inch
+		var pressureChange='<%= pressureChange %>', wi='<%= width %>', hi='<%= height %>', mainV='<%= mainV %>', mainVloss='<%= mainVloss %>';
+        var nameP='<%= nameP %>', nameMPi='<%= nameMPi %>', nameLPi='<%= nameLPi %>';
+        console.log(nameP+','+nameMPi+','+nameLPi);
+        return main(container, pressureChange, wi, hi, mainV, mainVloss);
+
+	}
+</script>
+
+
+<body onload="second(document.getElementById('graphContainer'))">
+
+	<div id="graphContainer"
+		style="position:relative;overflow:hidden;width:50000px;height:50000px;background:url('editors/images/grid.gif');cursor:default;">
+	</div>
+</body>
+</html>

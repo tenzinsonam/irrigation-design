@@ -1,0 +1,200 @@
+<!--
+  Copyright (c) 2006-2018, JGraph Ltd
+
+  Hello, World! example for mxGraph. This example demonstrates using
+  a DOM node to create a graph and adding vertices and edges.
+-->
+<html>
+<head>
+	<title>Irrigation network</title>
+
+	<!-- Sets the basepath for the library if not in same directory -->
+	<script type="text/javascript">
+		mxBasePath = '../src';
+	</script>
+
+	<!-- Loads and initializes the library -->
+	<script type="text/javascript" src="../src/js/mxClient.js"></script>
+
+	<!-- Example code -->
+	<script type="text/javascript">
+		// Program starts here. Creates a sample graph in the
+		// DOM node with the specified ID. This function is invoked
+		// from the onLoad event handler of the document (see below).
+		function main(container, pressureChange, wi, hi, mainV, mainVloss )
+		{
+			// Checks if the browser is supported
+			if (!mxClient.isBrowserSupported())
+			{
+				// Displays an error message if the browser is not supported.
+				mxUtils.error('Browser is not supported!', 200, false);
+			}
+			else
+			{
+				// Disables the built-in context menu
+				mxEvent.disableContextMenu(container);
+
+				// Creates the graph inside the given container
+				var graph = new mxGraph(container);
+
+				// Enables rubberband selection
+				new mxRubberband(graph);
+
+				// Gets the default parent for inserting new cells. This
+				// is normally the first child of the root (ie. layer 0).
+				var parent = graph.getDefaultParent();
+
+				// Adds cells to the model in a single step
+				graph.getModel().beginUpdate();
+				try
+				{
+          var g=10, rho=1000;
+					var v1 = graph.insertVertex(parent, null, '', 20, 20, 20, 20, 'fillColor=blue');
+					//var v2 = graph.insertVertex(parent, null, 'World!', 20, 150, 80, 30);
+					//var v3 = graph.insertVertex(parent, null, '', 200, 150, 80, 30);
+					//var v4 = graph.insertVertex(v2, null, '', 150, 20, 80, 30);
+					//var e1 = graph.insertEdge(parent, null, '', v1, v2);
+					//var e2 = graph.insertEdge(parent, null, '', v2, v3);
+					//var e3 = graph.insertEdge(parent, null, '', v1, v3);
+
+					var width= wi*2;
+					var height= hi*2;
+					//width= width*2;
+					//height= height*2;
+
+					var prevSub= v1;
+					var tempSub;
+					var prevEmit;
+					var tempEmit;
+					var xEmit;
+					var xSub= 20;
+					var yEmit;
+					var ySub= 20+54;
+          var yloss =0;
+          var tempPY=0;
+          var kineticH=0;
+					//console.log(width+","+height);
+					for(var i=0; i<height; i++){
+            kineticH= Math.pow(mainV,2)/(2*g);
+            yloss=yloss+kineticH-6*0.0254;  //6 inch pocket (rho*g*h)
+            tempPY=yloss*rho*g*0.000145;
+						//console.log(i+':'+tempPY+','+mainV);
+            mainV-=mainVloss;
+						tempSub= graph.insertVertex(parent, null, tempPY, xSub, ySub,160,  20, 'fillColor=white')
+						xEmit= xSub+200;
+						yEmit= ySub;
+						graph.insertEdge(parent, null, '', prevSub, tempSub);
+						prevEmit= tempSub;
+						prevSub= tempSub;
+						ySub+= 54;
+						for(var j=0; j<width; j++){
+							if(j==width-1){
+								tempEmit= graph.insertVertex(parent, null, pressureChange, xEmit, yEmit, 200, 20, 'fillColor=white');
+								graph.insertEdge(parent, null, '', prevEmit, tempEmit);
+							}
+							else {
+								tempEmit= graph.insertVertex(parent, null, '' + j, xEmit, yEmit, 20, 20, 'fillColor=lightblue');
+								graph.insertEdge(parent, null, '', prevEmit, tempEmit);
+							}
+							prevEmit= tempEmit;
+							xEmit+= 104;
+							//console.log(i+j);
+						}
+						//xSub+= 24;
+					}
+
+          /*var xmlEncode = new mxCodec();
+          var node = xmlEncode.encode(graph.getModel());
+          mxUtils.popup(mxUtils.getPrettyXml(node), false);*/
+				}
+				finally
+				{
+					// Updates the display
+					graph.getModel().endUpdate();
+				}
+			}
+			/*
+			var xmlDoc = mxUtils.createXmlDocument();
+			var root = xmlDoc.createElement('output');
+			xmlDoc.appendChild(root);
+
+			var xmlCanvas = new mxXmlCanvas2D(root);
+			var imgExport = new mxImageExport();
+			imgExport.drawState(graph.getView().getState(graph.model.root), xmlCanvas);
+
+			var bounds = graph.getGraphBounds();
+			var w = Math.ceil(bounds.x + bounds.width);
+			var h = Math.ceil(bounds.y + bounds.height);
+
+			var xml = mxUtils.getXml(root);
+			new mxXmlRequest('export', 'format=png&w=' + w +
+		 	'&h=' + h + '&bg=#F9F7ED&xml=' + encodeURIComponent(xml))
+		 	.simulate(document, '_blank');*/
+
+		};
+
+
+	</script>
+</head>
+
+<script>
+	function second(container){
+    //lateralD = inch, lateralL=feet, orificeQ=lph, mainL=feet, mainD=inch
+		var lateralD=0.47, lateralL=10, orificeQ=2, mainL=10, mainD=0.62;
+		var wi = lateralL, hi = mainL;
+		var g=10, rho=1000, C=150;
+
+		var orificeN = lateralL*2;
+		var lateralQ = orificeN*orificeQ/(60*60);
+    var lateralN = hi*2;
+
+		mainL = mainL*0.0254*12;
+		lateralQ = lateralQ/1000;
+		lateralD=lateralD*0.0254; //cout << "lateralD :" << lateralD << endl;
+		lateralL=lateralL*0.0254*12;
+    mainD = mainD*0.0254;
+    var lateralV = lateralQ*4/(3.14*lateralD*lateralD);
+		var F1 = 0.63837*Math.pow(orificeN, -1.8916) + 0.35929;
+		var hf = 10.77*lateralL*(Math.pow((lateralQ/C),1.852))*Math.pow(lateralD,-4.865);
+    var mainV = lateralQ*lateralN*4/(3.14*mainD*mainD);
+		var mainQ = lateralQ*lateralN*1000*60;  // lpm
+		console.log("mainQ (lpm):" + mainQ);
+
+    var smallD = lateralD-0.001;
+
+		var squareS=0;
+	  for(var i=1; i<=orificeN; i++){
+	    squareS=squareS+Math.pow(i,1.852);
+	  }
+	  var F2=squareS/Math.pow(orificeN,2.852);
+		//console.log("F2 :" + F2);
+
+		var F3 = Math.pow((1.852+1),-1) + Math.pow(2*orificeN,-1) + Math.pow(1.852-1,0.5)/(6*Math.pow(orificeN,2));
+		//console.log("F3 :" + F3);
+
+		var temp1 = Math.max(F1, F2);
+		temp1 = Math.max(temp1, F3);
+
+    var  k = 0.056*(Math.pow(lateralD/smallD,17.83)-1);
+    var hm =  k*(Math.pow(lateralV,2))/(2*g);
+
+		var pressureChange = (hf+hm*orificeN)*g*rho*0.000145;
+    var kineticH = Math.pow(mainV,2)/(2*g);
+		console.log("change in pressure caused in lateral (psi): "+ pressureChange);
+		//console.log("kineticH :" + kineticH);
+    var mainVloss = lateralQ*4/(3.14*mainD*mainD);
+		return main(container, pressureChange, wi, hi, mainV, mainVloss);
+
+	}
+</script>
+
+
+<!-- Page passes the container for the graph to the program -->
+<body onload="second(document.getElementById('graphContainer'))">
+
+	<!-- Creates a container for the graph with a grid wallpaper -->
+	<div id="graphContainer"
+		style="position:relative;overflow:hidden;width:50000px;height:50000px;background:url('editors/images/grid.gif');cursor:default;">
+	</div>
+</body>
+</html>
